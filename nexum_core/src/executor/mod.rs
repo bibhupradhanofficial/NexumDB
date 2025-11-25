@@ -66,7 +66,7 @@ impl Executor {
                     rows: values.len() 
                 })
             }
-            Statement::Select { table, columns, where_clause } => {
+            Statement::Select { table, columns, where_clause, order_by, limit } => {
                 if let Some(cache) = &self.cache {
                     let query_str = format!("SELECT {:?} FROM {}", columns, table);
                     
@@ -105,6 +105,41 @@ impl Executor {
                         .collect();
                     
                     println!("Filtered {} rows using WHERE clause", rows.len());
+                }
+                
+                if let Some(order_clauses) = order_by {
+                    let column_names: Vec<String> = schema.columns.iter()
+                        .map(|c| c.name.clone())
+                        .collect();
+                    
+                    for order_clause in order_clauses.iter().rev() {
+                        if let Some(col_idx) = column_names.iter().position(|c| c == &order_clause.column) {
+                            rows.sort_by(|a, b| {
+                                let ordering = match (&a.values[col_idx], &b.values[col_idx]) {
+                                    (Value::Integer(av), Value::Integer(bv)) => av.cmp(bv),
+                                    (Value::Float(av), Value::Float(bv)) => {
+                                        av.partial_cmp(bv).unwrap_or(std::cmp::Ordering::Equal)
+                                    }
+                                    (Value::Text(av), Value::Text(bv)) => av.cmp(bv),
+                                    (Value::Boolean(av), Value::Boolean(bv)) => av.cmp(bv),
+                                    _ => std::cmp::Ordering::Equal,
+                                };
+                                
+                                if order_clause.ascending {
+                                    ordering
+                                } else {
+                                    ordering.reverse()
+                                }
+                            });
+                        }
+                    }
+                    
+                    println!("Sorted {} rows using ORDER BY", rows.len());
+                }
+                
+                if let Some(limit_count) = limit {
+                    rows.truncate(limit_count);
+                    println!("Limited to {} rows using LIMIT", limit_count);
                 }
                 
                 if let Some(cache) = &self.cache {
@@ -199,12 +234,16 @@ mod tests {
             table: "test_table".to_string(),
             columns: vec!["*".to_string()],
             where_clause: None,
+            order_by: None,
+            limit: None,
         };
-        
         let result = executor.execute(select).unwrap();
+        
         match result {
-            ExecutionResult::Selected { rows, .. } => assert_eq!(rows.len(), 2),
-            _ => panic!("Expected Selected result"),
+            ExecutionResult::Selected { rows, .. } => {
+                assert_eq!(rows.len(), 2);
+            }
+            _ => panic!("Expected selected"),
         }
     }
 }

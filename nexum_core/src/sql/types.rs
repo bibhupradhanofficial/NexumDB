@@ -44,6 +44,12 @@ pub struct TableSchema {
 }
 
 #[derive(Debug, Clone)]
+pub struct OrderByClause {
+    pub column: String,
+    pub ascending: bool,
+}
+
+#[derive(Debug, Clone)]
 pub enum Statement {
     CreateTable {
         name: String,
@@ -58,5 +64,7 @@ pub enum Statement {
         table: String,
         columns: Vec<String>,
         where_clause: Option<Box<Expr>>,
+        order_by: Option<Vec<OrderByClause>>,
+        limit: Option<usize>,
     },
 }

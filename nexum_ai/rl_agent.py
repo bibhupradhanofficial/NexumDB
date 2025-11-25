@@ -23,7 +23,8 @@ class QLearningAgent:
         learning_rate: float = 0.1,
         discount_factor: float = 0.9,
         epsilon: float = 0.2,
-        epsilon_decay: float = 0.995
+        epsilon_decay: float = 0.995,
+        state_file: str = "q_table.pkl"
     ):
         """
         Initialize Q-learning agent
@@ -33,6 +34,7 @@ class QLearningAgent:
             discount_factor: Discount factor (gamma)
             epsilon: Exploration rate
             epsilon_decay: Epsilon decay rate per episode
+            state_file: Path to save/load Q-table
         """
         self.q_table: Dict[str, Dict[str, float]] = {}
         self.learning_rate = learning_rate
@@ -40,11 +42,14 @@ class QLearningAgent:
         self.epsilon = epsilon
         self.epsilon_min = 0.01
         self.epsilon_decay = epsilon_decay
+        self.state_file = state_file
         
         self.actions = ["force_cache", "bypass_cache", "normal"]
         
         self.training_history = []
         self.episode_count = 0
+        
+        self.load_state()
         
         print(f"RL Agent initialized: lr={learning_rate}, gamma={discount_factor}, epsilon={epsilon}")
     
@@ -170,29 +175,45 @@ class QLearningAgent:
             'avg_reward': np.mean([h['reward'] for h in self.training_history[-100:]]) if self.training_history else 0.0
         }
     
-    def save(self, filepath: str = "rl_agent.json"):
-        """Save Q-table to file"""
+    def save_state(self, filepath: str = None):
+        """Save Q-table and agent state to file using joblib"""
+        import joblib
+        
+        if filepath is None:
+            filepath = self.state_file
+            
         data = {
             'q_table': self.q_table,
             'epsilon': self.epsilon,
             'episode_count': self.episode_count,
             'history_size': len(self.training_history)
         }
-        with open(filepath, 'w') as f:
-            json.dump(data, f, indent=2)
-        print(f"Agent saved to {filepath}")
+        
+        try:
+            joblib.dump(data, filepath)
+            print(f"Agent state saved to {filepath}")
+        except Exception as e:
+            print(f"Error saving agent state: {e}")
     
-    def load(self, filepath: str = "rl_agent.json"):
-        """Load Q-table from file"""
+    def load_state(self, filepath: str = None):
+        """Load Q-table and agent state from file using joblib"""
+        import joblib
+        import os
+        
+        if filepath is None:
+            filepath = self.state_file
+            
         if os.path.exists(filepath):
-            with open(filepath, 'r') as f:
-                data = json.load(f)
-            self.q_table = data.get('q_table', {})
-            self.epsilon = data.get('epsilon', self.epsilon)
-            self.episode_count = data.get('episode_count', 0)
-            print(f"Agent loaded from {filepath}: {len(self.q_table)} states")
+            try:
+                data = joblib.load(filepath)
+                self.q_table = data.get('q_table', {})
+                self.epsilon = data.get('epsilon', self.epsilon)
+                self.episode_count = data.get('episode_count', 0)
+                print(f"Agent state loaded from {filepath}: {len(self.q_table)} states, epsilon={self.epsilon:.4f}")
+            except Exception as e:
+                print(f"Error loading agent state: {e}")
         else:
-            print(f"No saved agent found at {filepath}")
+            print(f"No saved state found at {filepath}, starting fresh")
 
 
 def test_rl_agent():

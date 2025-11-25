@@ -82,10 +82,30 @@ impl Parser {
                     
                     let where_clause = select.selection.as_ref().map(|expr| Box::new(expr.clone()));
                     
+                    let order_by = if !query.order_by.is_empty() {
+                        Some(query.order_by.iter().map(|order| {
+                            let column = format!("{}", order.expr);
+                            let ascending = order.asc.unwrap_or(true);
+                            crate::sql::types::OrderByClause { column, ascending }
+                        }).collect())
+                    } else {
+                        None
+                    };
+                    
+                    let limit = query.limit.as_ref().and_then(|limit_expr| {
+                        if let ast::Expr::Value(ast::Value::Number(n, _)) = limit_expr {
+                            n.parse().ok()
+                        } else {
+                            None
+                        }
+                    });
+                    
                     Ok(Statement::Select {
                         table,
                         columns,
                         where_clause,
+                        order_by,
+                        limit,
                     })
                 } else {
                     Err(anyhow!("Unsupported query type"))

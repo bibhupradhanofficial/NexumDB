@@ -21,15 +21,27 @@ class NLTranslator:
             model_path: Path to GGUF model file (e.g., phi-2.Q4_K_M.gguf)
             n_ctx: Context window size
         """
-        self.model_path = model_path or os.getenv('NEXUMDB_MODEL_PATH')
-        self.model = None
         self.n_ctx = n_ctx
+        self.model = None
         
-        if self.model_path and os.path.exists(self.model_path):
+        if model_path is None:
+            model_path = os.getenv('NEXUMDB_MODEL_PATH')
+        
+        if not model_path:
+            from .model_manager import ModelManager
+            manager = ModelManager()
+            
+            model_path = manager.ensure_model(
+                "phi-2.Q4_K_M.gguf",
+                repo_id="TheBloke/phi-2-GGUF",
+                filename="phi-2.Q4_K_M.gguf"
+            )
+        
+        if model_path and os.path.exists(model_path):
             try:
-                print(f"Loading LLM from {self.model_path}...")
+                print(f"Loading LLM from {model_path}...")
                 self.model = Llama(
-                    model_path=self.model_path,
+                    model_path=model_path,
                     n_ctx=n_ctx,
                     n_threads=4,
                     verbose=False
@@ -39,7 +51,7 @@ class NLTranslator:
                 print(f"Warning: Could not load LLM: {e}")
                 self.model = None
         else:
-            print("Warning: No model path provided. NL translation will use fallback.")
+            print("Warning: No model path provided or download failed. NL translation will use fallback.")
     
     def translate(self, natural_query: str, schema: str = "") -> str:
         """

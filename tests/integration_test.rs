@@ -1,24 +1,24 @@
 use nexum_core::{StorageEngine, Parser, Executor};
 
 #[test]
-fn test_where_clause_filtering() {
+fn test_advanced_sql_features() {
     let storage = StorageEngine::memory().unwrap();
     let executor = Executor::new(storage);
     
-    let create = Parser::parse("CREATE TABLE users (id INTEGER, name TEXT, age INTEGER)").unwrap();
+    let create = Parser::parse("CREATE TABLE items (id INTEGER, name TEXT, price INTEGER)").unwrap();
     executor.execute(create).unwrap();
     
     let insert = Parser::parse(
-        "INSERT INTO users (id, name, age) VALUES (1, 'Alice', 30), (2, 'Bob', 22), (3, 'Charlie', 28)"
+        "INSERT INTO items (id, name, price) VALUES (1, 'TestA', 100), (2, 'TestB', 200), (3, 'OtherC', 50), (4, 'TestC', 150)"
     ).unwrap();
     executor.execute(insert).unwrap();
     
-    let select = Parser::parse("SELECT * FROM users WHERE age > 25").unwrap();
+    let select = Parser::parse("SELECT * FROM items WHERE name LIKE 'Test%' ORDER BY price DESC LIMIT 2").unwrap();
     let result = executor.execute(select).unwrap();
     
     match result {
         nexum_core::executor::ExecutionResult::Selected { rows, .. } => {
-            println!("Filtered rows: {:?}", rows);
+            println!("Result rows: {:?}", rows);
             assert_eq!(rows.len(), 2);
         }
         _ => panic!("Expected Selected result"),
@@ -26,50 +26,48 @@ fn test_where_clause_filtering() {
 }
 
 #[test]
-fn test_where_clause_with_and() {
+fn test_in_operator_integration() {
     let storage = StorageEngine::memory().unwrap();
     let executor = Executor::new(storage);
     
-    let create = Parser::parse("CREATE TABLE products (id INTEGER, name TEXT, price INTEGER)").unwrap();
+    let create = Parser::parse("CREATE TABLE orders (id INTEGER, status TEXT)").unwrap();
     executor.execute(create).unwrap();
     
     let insert = Parser::parse(
-        "INSERT INTO products (id, name, price) VALUES (1, 'Laptop', 1000), (2, 'Mouse', 25), (3, 'Keyboard', 75)"
+        "INSERT INTO orders VALUES (1, 'active'), (2, 'pending'), (3, 'completed'), (4, 'active')"
     ).unwrap();
     executor.execute(insert).unwrap();
     
-    let select = Parser::parse("SELECT * FROM products WHERE price > 50 AND price < 500").unwrap();
+    let select = Parser::parse("SELECT * FROM orders WHERE status IN ('active', 'pending')").unwrap();
     let result = executor.execute(select).unwrap();
     
     match result {
         nexum_core::executor::ExecutionResult::Selected { rows, .. } => {
-            println!("Filtered rows: {:?}", rows);
-            assert_eq!(rows.len(), 1);
+            assert_eq!(rows.len(), 3);
         }
         _ => panic!("Expected Selected result"),
     }
 }
 
 #[test]
-fn test_where_clause_text_equality() {
+fn test_between_with_order_limit() {
     let storage = StorageEngine::memory().unwrap();
     let executor = Executor::new(storage);
     
-    let create = Parser::parse("CREATE TABLE users (id INTEGER, name TEXT)").unwrap();
+    let create = Parser::parse("CREATE TABLE products (id INTEGER, price INTEGER)").unwrap();
     executor.execute(create).unwrap();
     
     let insert = Parser::parse(
-        "INSERT INTO users (id, name) VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Alice')"
+        "INSERT INTO products VALUES (1, 50), (2, 150), (3, 250), (4, 175), (5, 125)"
     ).unwrap();
     executor.execute(insert).unwrap();
     
-    let select = Parser::parse("SELECT * FROM users WHERE name = 'Alice'").unwrap();
+    let select = Parser::parse("SELECT * FROM products WHERE price BETWEEN 100 AND 200 ORDER BY price ASC LIMIT 3").unwrap();
     let result = executor.execute(select).unwrap();
     
     match result {
         nexum_core::executor::ExecutionResult::Selected { rows, .. } => {
-            println!("Filtered rows: {:?}", rows);
-            assert_eq!(rows.len(), 2);
+            assert_eq!(rows.len(), 3);
         }
         _ => panic!("Expected Selected result"),
     }
