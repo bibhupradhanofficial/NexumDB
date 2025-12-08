@@ -4,7 +4,7 @@ Uses llama-cpp-python for local model inference
 """
 
 from llama_cpp import Llama
-from typing import Optional, List, Dict, Any
+from typing import Optional
 import os
 
 

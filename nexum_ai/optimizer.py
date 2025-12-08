@@ -3,7 +3,7 @@ Semantic cache and query optimizer using local embedding models
 """
 
 import numpy as np
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Optional, List, Dict, Any
 import json
 
 class SemanticCache:
