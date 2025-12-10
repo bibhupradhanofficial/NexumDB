@@ -85,11 +85,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-          cache: "pip"
-          cache-dependency-path: nexum_ai/requirements-lock.txt
 
-      - name: Install dependencies
-        run: pip install -r nexum_ai/requirements-lock.txt
-
-      - name: Byte-compile nexum_ai
-        run: python -m compileall nexum_ai
+      - name: Byte-compile nexum_ai (syntax check)
+        run: python -m compileall -q nexum_ai
