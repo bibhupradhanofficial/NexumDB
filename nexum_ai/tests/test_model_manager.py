@@ -83,9 +83,14 @@ class TestModelManager:
         assert "model2.gguf" in models
         assert "not_a_model.txt" not in models
     
-    def test_list_models_nonexistent_directory(self):
+    def test_list_models_nonexistent_directory(self, temp_models_dir):
         """Test listing models when directory doesn't exist"""
-        manager = ModelManager(models_dir="/nonexistent/path")
+        import os
+        
+        # Create a path that doesn't exist in temp directory
+        nonexistent_path = os.path.join(temp_models_dir, "nonexistent_subdir")
+        manager = ModelManager(models_dir=nonexistent_path)
+        
         # Remove the directory that was created during init
         if manager.models_dir.exists():
             manager.models_dir.rmdir()

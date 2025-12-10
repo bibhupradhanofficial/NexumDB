@@ -13,8 +13,15 @@ class TestNLTranslator:
     def test_initialization_no_model(self):
         """Test NLTranslator initialization without model"""
         with patch.dict(os.environ, {}, clear=True):
-            translator = NLTranslator()
-            assert translator.model is None
+            with patch('nexum_ai.translator.Llama', None):  # Force Llama to be None
+                with patch('os.path.exists', return_value=False):  # No model file exists
+                    with patch('nexum_ai.model_manager.ModelManager') as mock_manager:
+                        mock_manager_instance = Mock()
+                        mock_manager_instance.ensure_model.return_value = None
+                        mock_manager.return_value = mock_manager_instance
+                        
+                        translator = NLTranslator(model_path=None)  # Explicitly pass None
+                        assert translator.model is None
     
     @patch('nexum_ai.translator.Llama')
     def test_initialization_with_model(self, mock_llama):
