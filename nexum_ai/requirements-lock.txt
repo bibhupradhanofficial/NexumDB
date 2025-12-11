@@ -73,8 +73,9 @@ scikit-learn==1.7.2
     # via
     #   -r requirements.txt
     #   sentence-transformers
-# scipy pinned to 1.11.1 because it is the latest version compatible with numpy 1.26.4
-scipy==1.11.1
+# Updated to latest scipy version compatible with numpy 1.26.4
+scipy==1.16.2
+
     # via
     #   scikit-learn
     #   sentence-transformers
