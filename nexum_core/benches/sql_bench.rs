@@ -145,8 +145,13 @@ fn parse_large_query_benchmark(c: &mut Criterion) {
     // Generate a moderately large INSERT statement (reduced from 10k to 1k)
     let mut large_values = Vec::new();
     for i in 0..1000 {
-        large_values.push(format!("({}, 'User{}', {}, 'email{}@example.com')",
-                                 i, i, 20 + (i % 50), i));
+        large_values.push(format!(
+            "({}, 'User{}', {}, 'email{}@example.com')",
+            i,
+            i,
+            20 + (i % 50),
+            i
+        ));
     }
     let large_insert = format!(
         "INSERT INTO users (id, name, age, email) VALUES {}",
@@ -166,10 +171,7 @@ fn parse_large_query_benchmark(c: &mut Criterion) {
     for i in 0..50 {
         conditions.push(format!("id = {}", i));
     }
-    let large_select = format!(
-        "SELECT * FROM users WHERE {}",
-        conditions.join(" OR ")
-    );
+    let large_select = format!("SELECT * FROM users WHERE {}", conditions.join(" OR "));
 
     group.bench_function("large_select_many_conditions", |b| {
         b.iter(|| {

@@ -78,9 +78,18 @@ fn executor_filtered_select_benchmark(c: &mut Criterion) {
 
     let queries = vec![
         ("age_filter", "SELECT * FROM users WHERE age > 30"),
-        ("name_filter", "SELECT * FROM users WHERE name LIKE 'User1%'"),
-        ("complex_filter", "SELECT * FROM users WHERE age > 25 AND age < 45"),
-        ("multiple_conditions", "SELECT * FROM users WHERE age > 20 AND name LIKE 'User%' AND id < 5000"),
+        (
+            "name_filter",
+            "SELECT * FROM users WHERE name LIKE 'User1%'",
+        ),
+        (
+            "complex_filter",
+            "SELECT * FROM users WHERE age > 25 AND age < 45",
+        ),
+        (
+            "multiple_conditions",
+            "SELECT * FROM users WHERE age > 20 AND name LIKE 'User%' AND id < 5000",
+        ),
     ];
 
     for (query_name, sql) in queries {
@@ -157,9 +166,17 @@ fn executor_create_table_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("executor_create_table");
 
     let table_definitions = vec![
-        ("simple_table", "CREATE TABLE simple (id INTEGER, name TEXT)"),
-        ("medium_table", "CREATE TABLE medium (id INTEGER, name TEXT, age INTEGER, email TEXT, status TEXT)"),
-        ("complex_table", "CREATE TABLE complex (
+        (
+            "simple_table",
+            "CREATE TABLE simple (id INTEGER, name TEXT)",
+        ),
+        (
+            "medium_table",
+            "CREATE TABLE medium (id INTEGER, name TEXT, age INTEGER, email TEXT, status TEXT)",
+        ),
+        (
+            "complex_table",
+            "CREATE TABLE complex (
             id INTEGER,
             first_name TEXT,
             last_name TEXT,
@@ -175,7 +192,8 @@ fn executor_create_table_benchmark(c: &mut Criterion) {
             last_login TEXT,
             status TEXT,
             preferences TEXT
-        )"),
+        )",
+        ),
     ];
 
     for (table_name, sql) in table_definitions {

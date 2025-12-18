@@ -43,12 +43,36 @@ fn filter_simple_comparisons_benchmark(c: &mut Criterion) {
     let evaluator = ExpressionEvaluator::new(column_names);
 
     let test_cases = vec![
-        ("integer_eq", "id = 1000", create_test_row(1000, "John", 30, 50000.0, true)),
-        ("integer_gt", "age > 25", create_test_row(1, "Jane", 30, 60000.0, true)),
-        ("integer_lt", "age < 50", create_test_row(2, "Bob", 25, 45000.0, false)),
-        ("float_gt", "salary > 55000.0", create_test_row(3, "Alice", 35, 65000.0, true)),
-        ("text_eq", "name = 'John'", create_test_row(4, "John", 28, 52000.0, true)),
-        ("boolean_eq", "active = true", create_test_row(5, "Mary", 32, 58000.0, true)),
+        (
+            "integer_eq",
+            "id = 1000",
+            create_test_row(1000, "John", 30, 50000.0, true),
+        ),
+        (
+            "integer_gt",
+            "age > 25",
+            create_test_row(1, "Jane", 30, 60000.0, true),
+        ),
+        (
+            "integer_lt",
+            "age < 50",
+            create_test_row(2, "Bob", 25, 45000.0, false),
+        ),
+        (
+            "float_gt",
+            "salary > 55000.0",
+            create_test_row(3, "Alice", 35, 65000.0, true),
+        ),
+        (
+            "text_eq",
+            "name = 'John'",
+            create_test_row(4, "John", 28, 52000.0, true),
+        ),
+        (
+            "boolean_eq",
+            "active = true",
+            create_test_row(5, "Mary", 32, 58000.0, true),
+        ),
     ];
 
     for (test_name, sql, row_data) in test_cases {
@@ -127,27 +151,42 @@ fn filter_like_patterns_benchmark(c: &mut Criterion) {
         (
             "prefix_match",
             "name LIKE 'John%'",
-            vec![Value::Text("John Smith".to_string()), Value::Text("john@example.com".to_string())],
+            vec![
+                Value::Text("John Smith".to_string()),
+                Value::Text("john@example.com".to_string()),
+            ],
         ),
         (
             "suffix_match",
             "email LIKE '%@gmail.com'",
-            vec![Value::Text("Alice Johnson".to_string()), Value::Text("alice@gmail.com".to_string())],
+            vec![
+                Value::Text("Alice Johnson".to_string()),
+                Value::Text("alice@gmail.com".to_string()),
+            ],
         ),
         (
             "contains_match",
             "name LIKE '%son%'",
-            vec![Value::Text("Johnson".to_string()), Value::Text("johnson@example.com".to_string())],
+            vec![
+                Value::Text("Johnson".to_string()),
+                Value::Text("johnson@example.com".to_string()),
+            ],
         ),
         (
             "single_char_wildcard",
             "name LIKE 'J_hn'",
-            vec![Value::Text("John".to_string()), Value::Text("john@example.com".to_string())],
+            vec![
+                Value::Text("John".to_string()),
+                Value::Text("john@example.com".to_string()),
+            ],
         ),
         (
             "complex_pattern",
             "email LIKE '%@%.com'",
-            vec![Value::Text("Bob Wilson".to_string()), Value::Text("bob@company.com".to_string())],
+            vec![
+                Value::Text("Bob Wilson".to_string()),
+                Value::Text("bob@company.com".to_string()),
+            ],
         ),
     ];
 
@@ -197,10 +236,7 @@ fn filter_in_list_benchmark(c: &mut Criterion) {
     // Test string IN lists
     let status_sql = "status IN ('active', 'pending', 'inactive', 'suspended', 'archived')";
     let status_expr = parse_where_clause(status_sql);
-    let status_row = vec![
-        Value::Integer(1),
-        Value::Text("active".to_string()),
-    ];
+    let status_row = vec![Value::Integer(1), Value::Text("active".to_string())];
 
     group.bench_function("string_in_list", |b| {
         b.iter(|| {
@@ -221,17 +257,29 @@ fn filter_between_benchmark(c: &mut Criterion) {
         (
             "integer_between",
             "age BETWEEN 25 AND 65",
-            vec![Value::Integer(35), Value::Float(55000.0), Value::Float(85.5)],
+            vec![
+                Value::Integer(35),
+                Value::Float(55000.0),
+                Value::Float(85.5),
+            ],
         ),
         (
             "float_between",
             "salary BETWEEN 40000.0 AND 80000.0",
-            vec![Value::Integer(30), Value::Float(65000.0), Value::Float(92.3)],
+            vec![
+                Value::Integer(30),
+                Value::Float(65000.0),
+                Value::Float(92.3),
+            ],
         ),
         (
             "score_between",
             "score BETWEEN 80.0 AND 100.0",
-            vec![Value::Integer(28), Value::Float(52000.0), Value::Float(88.7)],
+            vec![
+                Value::Integer(28),
+                Value::Float(52000.0),
+                Value::Float(88.7),
+            ],
         ),
     ];
 
@@ -275,9 +323,15 @@ fn filter_batch_evaluation_benchmark(c: &mut Criterion) {
 
     let filters = vec![
         ("simple_filter", "age > 30"),
-        ("complex_filter", "age > 25 AND salary > 50000.0 AND active = true"),
+        (
+            "complex_filter",
+            "age > 25 AND salary > 50000.0 AND active = true",
+        ),
         ("like_filter", "name LIKE 'User1%'"),
-        ("range_filter", "age BETWEEN 25 AND 45 AND salary BETWEEN 40000.0 AND 70000.0"),
+        (
+            "range_filter",
+            "age BETWEEN 25 AND 45 AND salary BETWEEN 40000.0 AND 70000.0",
+        ),
     ];
 
     for (filter_name, sql) in filters {

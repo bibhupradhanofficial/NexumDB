@@ -11,19 +11,23 @@ fn storage_write_throughput(c: &mut Criterion) {
     for size in [100, 1000, 10000, 100000].iter() {
         group.throughput(Throughput::Elements(*size as u64));
 
-        group.bench_with_input(BenchmarkId::new("sequential_writes", size), size, |b, &size| {
-            b.iter_batched(
-                || StorageEngine::memory().unwrap(),
-                |engine| {
-                    for i in 0..size {
-                        let key = format!("key_{:06}", i);
-                        let value = format!("value_{:06}_data_payload", i);
-                        black_box(engine.set(key.as_bytes(), value.as_bytes()).unwrap());
-                    }
-                },
-                criterion::BatchSize::SmallInput,
-            );
-        });
+        group.bench_with_input(
+            BenchmarkId::new("sequential_writes", size),
+            size,
+            |b, &size| {
+                b.iter_batched(
+                    || StorageEngine::memory().unwrap(),
+                    |engine| {
+                        for i in 0..size {
+                            let key = format!("key_{:06}", i);
+                            let value = format!("value_{:06}_data_payload", i);
+                            black_box(engine.set(key.as_bytes(), value.as_bytes()).unwrap());
+                        }
+                    },
+                    criterion::BatchSize::SmallInput,
+                );
+            },
+        );
     }
 
     group.finish();
@@ -35,27 +39,31 @@ fn storage_read_throughput(c: &mut Criterion) {
     for size in [100, 1000, 10000, 100000].iter() {
         group.throughput(Throughput::Elements(*size as u64));
 
-        group.bench_with_input(BenchmarkId::new("sequential_reads", size), size, |b, &size| {
-            b.iter_batched(
-                || {
-                    let engine = StorageEngine::memory().unwrap();
-                    // Pre-populate with data
-                    for i in 0..size {
-                        let key = format!("key_{:06}", i);
-                        let value = format!("value_{:06}_data_payload", i);
-                        engine.set(key.as_bytes(), value.as_bytes()).unwrap();
-                    }
-                    engine
-                },
-                |engine| {
-                    for i in 0..size {
-                        let key = format!("key_{:06}", i);
-                        black_box(engine.get(key.as_bytes()).unwrap());
-                    }
-                },
-                criterion::BatchSize::SmallInput,
-            );
-        });
+        group.bench_with_input(
+            BenchmarkId::new("sequential_reads", size),
+            size,
+            |b, &size| {
+                b.iter_batched(
+                    || {
+                        let engine = StorageEngine::memory().unwrap();
+                        // Pre-populate with data
+                        for i in 0..size {
+                            let key = format!("key_{:06}", i);
+                            let value = format!("value_{:06}_data_payload", i);
+                            engine.set(key.as_bytes(), value.as_bytes()).unwrap();
+                        }
+                        engine
+                    },
+                    |engine| {
+                        for i in 0..size {
+                            let key = format!("key_{:06}", i);
+                            black_box(engine.get(key.as_bytes()).unwrap());
+                        }
+                    },
+                    criterion::BatchSize::SmallInput,
+                );
+            },
+        );
     }
 
     group.finish();
