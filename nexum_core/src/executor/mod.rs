@@ -5,7 +5,7 @@ use crate::storage::{Result, StorageEngine, StorageError};
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
-mod filter;
+pub mod filter;
 use filter::ExpressionEvaluator;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
