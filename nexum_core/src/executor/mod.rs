@@ -29,7 +29,7 @@ impl Executor {
         }
     }
 
-    pub fn with_cache(mut self) -> Self {
+    pub fn with_cache(self) -> Self {
         self.with_cache_file("semantic_cache.pkl")
     }
 
