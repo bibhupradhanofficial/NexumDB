@@ -173,6 +173,44 @@ class QLearningAgent:
             'avg_reward': np.mean([h['reward'] for h in self.training_history[-100:]]) if self.training_history else 0.0
         }
     
+    def explain_action(self, query_length: int, cache_hit: bool, complexity: int) -> Dict[str, any]:
+        """
+        Explain what action would be taken without executing
+        Returns Q-values, state analysis, and predicted action for EXPLAIN command
+        """
+        state = self._get_state_key(query_length, cache_hit, complexity)
+        
+        # Get Q-values for this state
+        if state in self.q_table:
+            q_values = {a: round(v, 4) for a, v in self.q_table[state].items()}
+        else:
+            q_values = {a: 0.0 for a in self.actions}
+        
+        # Determine best action
+        best_action = max(self.actions, key=lambda a: q_values.get(a, 0.0))
+        
+        # Check if exploration would occur
+        would_explore = np.random.random() < self.epsilon
+        
+        return {
+            'state': state,
+            'state_breakdown': {
+                'query_length_bucket': min(query_length // 10, 10),
+                'cache_hit': cache_hit,
+                'complexity': complexity
+            },
+            'q_values': q_values,
+            'best_action': best_action,
+            'epsilon': round(self.epsilon, 4),
+            'would_explore': would_explore,
+            'predicted_action': np.random.choice(self.actions) if would_explore else best_action,
+            'agent_stats': {
+                'total_states_learned': len(self.q_table),
+                'total_updates': len(self.training_history),
+                'episodes': self.episode_count
+            }
+        }
+    
     def save_state(self, filepath: Optional[str] = None) -> None:
         """Save Q-table and agent state to file using joblib"""
         try:
