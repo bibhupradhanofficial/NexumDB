@@ -33,10 +33,10 @@ impl Executor {
         match SemanticCache::new() {
             Ok(cache) => {
                 self.cache = Some(cache);
-                println!("Semantic cache enabled");
+                log::info!("Semantic cache enabled");
             }
             Err(e) => {
-                println!("Warning: Could not initialize semantic cache: {}", e);
+                log::warn!("Could not initialize semantic cache: {}", e);
             }
         }
         self
@@ -85,7 +85,7 @@ impl Executor {
                         let query_str = format!("SELECT {:?} FROM {}", columns, table);
 
                         if let Ok(Some(cached_result)) = cache.get(&query_str) {
-                            println!("Cache hit for query: {}", query_str);
+                            log::debug!("Cache hit for query: {}", query_str);
                             let rows: Vec<Row> =
                                 serde_json::from_str(&cached_result).unwrap_or_else(|_| Vec::new());
                             return Ok(ExecutionResult::Selected { columns, rows });
@@ -115,7 +115,7 @@ impl Executor {
                                 .unwrap_or(false)
                         });
 
-                        println!("Filtered {} rows using WHERE clause", rows.len());
+                        log::debug!("Filtered {} rows using WHERE clause", rows.len());
                     }
 
                     if let Some(order_clauses) = order_by {
@@ -146,12 +146,12 @@ impl Executor {
                             }
                         }
 
-                        println!("Sorted {} rows using ORDER BY", rows.len());
+                        log::debug!("Sorted {} rows using ORDER BY", rows.len());
                     }
 
                     if let Some(limit_count) = limit {
                         rows.truncate(limit_count);
-                        println!("Limited to {} rows using LIMIT", limit_count);
+                        log::debug!("Limited to {} rows using LIMIT", limit_count);
                     }
 
                     if let Some(cache) = &self.cache {
@@ -171,8 +171,6 @@ impl Executor {
                     })?;
 
                     let prefix = Self::table_data_prefix(&table);
-                    let all_rows = self.storage.scan_prefix(&prefix)?;
-
                     let mut deleted_count = 0;
 
                     if let Some(where_expr) = where_clause {
@@ -180,17 +178,30 @@ impl Executor {
                             schema.columns.iter().map(|c| c.name.clone()).collect();
                         let evaluator = ExpressionEvaluator::new(column_names);
 
+                        // Process rows incrementally to avoid loading all into memory
+                        let all_rows = self.storage.scan_prefix(&prefix)?;
                         for (key, value) in &all_rows {
                             if let Ok(row) = serde_json::from_slice::<Row>(value) {
-                                if evaluator.evaluate(&where_expr, &row.values).unwrap_or(false) {
-                                    self.storage.delete(key)?;
-                                    deleted_count += 1;
+                                match evaluator.evaluate(&where_expr, &row.values) {
+                                    Ok(true) => {
+                                        self.storage.delete(key)?;
+                                        deleted_count += 1;
+                                    }
+                                    Ok(false) => {
+                                        // Row doesn't match WHERE condition, skip
+                                    }
+                                    Err(e) => {
+                                        return Err(StorageError::ReadError(format!(
+                                            "WHERE clause evaluation failed: {}", e
+                                        )));
+                                    }
                                 }
                             }
                         }
                     } else {
                         // No WHERE clause - delete all rows
-                        println!("Warning: DELETE without WHERE clause will remove all rows from table '{}'", table);
+                        log::warn!("DELETE without WHERE clause will remove all rows from table '{}'", table);
+                        let all_rows = self.storage.scan_prefix(&prefix)?;
                         for (key, _) in &all_rows {
                             self.storage.delete(key)?;
                             deleted_count += 1;
@@ -205,7 +216,7 @@ impl Executor {
             };
 
         let duration = start.elapsed();
-        println!("Query executed in {:?}", duration);
+        log::debug!("Query executed in {:?}", duration);
 
         result
     }
