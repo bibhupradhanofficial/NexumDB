@@ -176,47 +176,60 @@ impl Executor {
                     })?;
 
                     let prefix = Self::table_data_prefix(&table);
-                    let mut deleted_count = 0;
 
                     if let Some(where_expr) = where_clause {
                         let column_names: Vec<String> =
                             schema.columns.iter().map(|c| c.name.clone()).collect();
                         let evaluator = ExpressionEvaluator::new(column_names);
 
-                        // Process rows incrementally to avoid loading all into memory
+                        // Two-phase deletion: first collect keys to delete, then delete them
+                        // This prevents partial deletion if WHERE evaluation fails
                         let all_rows = self.storage.scan_prefix(&prefix)?;
+                        let mut keys_to_delete: Vec<Vec<u8>> = Vec::new();
+
+                        // Phase 1: Evaluate all rows and collect matching keys
                         for (key, value) in &all_rows {
                             if let Ok(row) = serde_json::from_slice::<Row>(value) {
                                 match evaluator.evaluate(&where_expr, &row.values) {
                                     Ok(true) => {
-                                        self.storage.delete(key)?;
-                                        deleted_count += 1;
+                                        keys_to_delete.push(key.clone());
                                     }
                                     Ok(false) => {
                                         // Row doesn't match WHERE condition, skip
                                     }
                                     Err(e) => {
                                         return Err(StorageError::ReadError(format!(
-                                            "WHERE clause evaluation failed: {}", e
+                                            "WHERE clause evaluation failed on row: {}. No rows were deleted.", e
                                         )));
                                     }
                                 }
                             }
                         }
+
+                        // Phase 2: Delete all matching rows (only if Phase 1 succeeded)
+                        let deleted_count = keys_to_delete.len();
+                        for key in keys_to_delete {
+                            self.storage.delete(&key)?;
+                        }
+
+                        Ok(ExecutionResult::Deleted {
+                            table,
+                            rows: deleted_count,
+                        })
                     } else {
                         // No WHERE clause - delete all rows
                         log::warn!("DELETE without WHERE clause will remove all rows from table '{}'", table);
                         let all_rows = self.storage.scan_prefix(&prefix)?;
+                        let deleted_count = all_rows.len();
                         for (key, _) in &all_rows {
                             self.storage.delete(key)?;
-                            deleted_count += 1;
                         }
-                    }
 
-                    Ok(ExecutionResult::Deleted {
-                        table,
-                        rows: deleted_count,
-                    })
+                        Ok(ExecutionResult::Deleted {
+                            table,
+                            rows: deleted_count,
+                        })
+                    }
                 }
             };
 
