@@ -338,6 +338,8 @@ mod tests {
             } => {
                 assert_eq!(table, "users");
                 assert_eq!(assignments.len(), 1);
+                assert_eq!(assignments[0].0, "active");
+                assert_eq!(assignments[0].1, Value::Boolean(true));
                 assert!(where_clause.is_none());
             }
             _ => panic!("Expected Update statement"),
