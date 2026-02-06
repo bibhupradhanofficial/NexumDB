@@ -56,11 +56,11 @@ reviews:
     # Enable automatic reviews
     enabled: true
     
-    # Enable incremental reviews on each new commit
+    # Enable incremental reviews on each new commit/push
     auto_incremental_review: true
     
-    # Skip draft PRs
-    drafts: false
+    # Also review draft PRs
+    drafts: true
     
     # Review PRs targeting any branch
     base_branches: []
