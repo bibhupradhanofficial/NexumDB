@@ -15,11 +15,7 @@ jobs:
     release-please:
         runs-on: ubuntu-latest
         # Only run if NOT from bots or automated PR merges
-        if: |
-            github.event_name == 'workflow_dispatch' ||
-            (github.actor != 'dependabot[bot]' && 
-             github.actor != 'github-actions[bot]' &&
-             !contains(github.event.head_commit.message, 'Merge pull request'))
+        if: github.event_name == 'workflow_dispatch' || (github.actor != 'dependabot[bot]' && github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, 'Merge pull request'))
         steps:
             - uses: googleapis/release-please-action@v4
               id: release
